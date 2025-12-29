@@ -1,0 +1,323 @@
+---
+title: "Taller 6 - Unix y la linea de comando"
+author: 
+ - Integrante 1 Nicolas Montoya Leon - 202310678
+ - Integrante 2 John Anderson Acosta - 202212004
+ - Integrante 3 Raquel Bautista Escobar - 202310296
+date: today
+format: html
+lang: es
+fig-align: center
+df-print: paged
+toc: true
+---
+
+Complete los pasos que se indican en el taller al final de la guía. Una vez los complete reporte en este documento los comandos y resultados obtenidos. Puede hacer uso de los bloques de código para mostrar los comandos y las salidas de los mismos.
+
+#### 1. Navegando y moviendo archivos [1.50 puntos].
+
+
+```{bash}
+"| eval: false
+#| Cambie al directorio Talleres utilizando el comando cd. Luego entre al directorio Talleres-01
+[biol2205@hypatia ~]$ cd Talleres
+[biol2205@hypatia Talleres]$ cd Talleres-01
+
+#Examine los contenidos del directorio actual utilizando ls
+
+[biol2205@hypatia Talleres]$ ls
+i.moras  Taller-01
+
+[biol2205@hypatia Talleres]$ cd Taller-01/
+
+[biol2205@hypatia Taller-01]$ ls
+
+Datos1  Datos1.tgz
+
+#Ahora utilice el comando ls -lh. ¿Cuál es la diferencia con el comando anterior?
+
+[biol2205@hypatia Taller-01]$ ls -lh
+total 9.9M
+drwxr-xr-x 2 biol2205 cursos    3 Mar  3 17:47 Datos1
+-rw-r--r-- 1 biol2205 cursos 9.9M Feb 26 14:42 Datos1.tgz
+
+ls ayuda a mostrar los componentes del directorio actual
+ls -lh muestra una descripcion mas detallada de cada componente o archivo del directorio
+
+#Visualice la ruta del directorio actual con el comando pwd.
+
+[biol2205@hypatia Taller-01]$ pwd
+/hpcfs/home/cursos/biol2205/Talleres/Taller-01
+
+#¿A dónde lo lleva el comando cd.. y el comando cd ~? Vuelva al directorio HOME.
+
+[biol2205@hypatia Taller-01]$ cd ..
+[biol2205@hypatia Talleres]$ cd ~
+
+[biol2205@hypatia home]$ cd /hpcfs/home/cursos/biol2205
+
+cd .. lleva del directorio actual al directorio anterior donde esta contenido el directorio actual
+cd ~ regresa al directorio de inicio 
+
+#Entre al directorio correspondiente a su sección de laboratorio nombrado según esta. Cree la siguiente estructura de archivos con el comando mkdir:
+
+[biol2205@hypatia ~]$ ls
+seccion-01  seccion-02  seccion-03  Talleres  testjob.sh
+
+[biol2205@hypatia seccion-02]$ mkdir Grupo-04
+[biol2205@hypatia Grupo-04]$ mkdir ja.acostar1
+
+[biol2205@hypatia Grupo-04]$ cd ja.acostar1/
+[biol2205@hypatia ja.acostar1]$ mkdir files
+[biol2205@hypatia ja.acostar1]$ mkdir scripts
+[biol2205@hypatia ja.acostar1]$ mkdir tasks
+
+#Utilice cp para copiar el archivo Datos1.tgz (ubicado en el directorio ~/Talleres/Taller-01) a su carpeta del grupo. (tenga cuidado de corromper los archivos)
+
+[biol2205@hypatia ja.acostar1]$ cd ~/Talleres/Taller-01
+[biol2205@hypatia Taller-01]$ ls
+Datos1.tgz
+[biol2205@hypatia Taller-01]$ cp Datos1.tgz Grupo-04
+
+#Descomprima el archivo Datos1.tgz, que ya está en su carpeta, con el comando tar -xzvf. ¿Para qué sirven los flags -xzvf?
+
+[biol2205@hypatia Taller-01]$ tar -xzvf Datos1.tgz
+Datos1/
+Datos1/TAIR10_pep_20101214.fasta
+Datos1/lambda_virus.fa
+[biol2205@hypatia Taller-01]$ ls
+Datos1  Datos1.tgz  Grupo-04
+
+
+segun la documentación oficial 
+
+-x: Este flag indica que se desea extraer archivos de un archivo tar.
+-z: Este flag indica que el archivo tar está comprimido con gzip. Al utilizar este flag, tar automáticamente descomprimirá el archivo tar utilizando gzip.
+-v: Este flag activa el modo "verbose", lo que significa que tar mostrará información detallada sobre los archivos que está extrayendo.
+-f: Este flag se utiliza para especificar el nombre del archivo tar que se está procesando.
+
+
+```
+
+#### 2. Visualizando y manipulando archivos. [1.50 puntos]
+
+```{bash}
+
+"Visualice el archivo TAIR10_pep_20101214.fasta. Puede emplear alguno de los comandos cat, head, more o less. ¿Qué diferencias hay entre estos comandos?
+
+[biol2205@hypatia Taller-01]$ cd Datos1
+[biol2205@hypatia Datos1]$ ls
+lambda_virus.fa  proteinas  TAIR10_pep_20101214.fasta
+[biol2205@hypatia Datos1]$ cat TAIR10_pep_20101214.fasta
+#Muestra todo el contenido del archivo en la terminal
+[biol2205@hypatia Datos1]$ head TAIR10_pep_20101214.fasta
+#Muestra las primeras 10 líneas del archivo
+[biol2205@hypatia Datos1]$ less TAIR10_pep_20101214.fasta
+#Hace que se desplace por el contenido del archivo, mostrando una linea de contenido a la vez.
+[biol2205@hypatia Datos1]$ more TAIR10_pep_20101214.fasta
+
+
+#Sabiendo que las proteínas se encuentran en formato FASTA, y por ende los encabezados de las secuencias siempre comienzan por ”>”, utilice el comando grep para obtener los nombres de dichas proteínas.
+
+[biol2205@hypatia Datos1]$ grep ">" TAIR10_pep_20101214.fasta
+
+#¿Cuántas proteínas hay en ese archivo? Utilice la opción -c del comando grep.
+
+[biol2205@hypatia Datos1]$ grep -c ">" TAIR10_pep_20101214.fasta
+35386
+
+#Resuelva la pregunta anterior empleando el comando grep | wc -l (wc es un comando por aparte, no hace parte de grep). Describa para qué sirve el operador | .
+
+[biol2205@hypatia Datos1]$ grep ">" TAIR10_pep_20101214.fasta | wc -l
+35386
+
+"|" Se utiliza para redirigir la salida de un comando hacia la entrada de otro comando, permitiendo así encadenar múltiples comandos en una sola línea de ejecución.
+
+#Guarde los nombres de las proteínas (resultado del anterior paso) en un nuevo archivo empleando el operador de redirección >. Describa para qué sirve el operador >.
+
+
+grep "^" TAIR10_pep_20101214.fasta > Proteins_s
+
+se utiliza para redirigir la salida de un comando hacia un archivo, creando un nuevo archivo o sobrescribiendo uno existente si ya está presente. en este caso ">" hace que se dirige la ejecución del comando grep a proteins_S
+
+```
+
+## 3. Corriendo *scripts* en Bash [1.50 puntos]
+
+```{bash}
+"Qué significa que el manejador de trabajos o colas sea SLURM? Explore en internet cuáles son los comandos básicos para utilizar este sistema. ¿Para qué se utilizan sbatch, srun, scancel, y squeue? También puede usar el comando man para determinar qué hacen y qué argumentos toman estos y otros comandos.
+
+[biol2205@hypatia Datos1]$ cd /hpcfs/shared/README/
+[biol2205@hypatia README]$ ls
+many_tasks_per_job.sh  partitions.txt  readme.txt  slurmdoc.txt  srun.txt  test.cu  testgpu.sh  testjob.sh
+[biol2205@hypatia README]$ cat readme.txt
+Bienvenido a Hypatia, el servicio de HPC de la Universidad de los Andes.
+
+Aquí te dejamos la información que debes saber antes de hacer uso del cluster
+
+-------------------------------------------------
+              SISTEMA OPERATIVO
+-------------------------------------------------
+
+Nuestro sistema está montado en Linux Centos 8 con OpenHPC
+
+El manejador de trabajos es SLURM
+
+El sistema de almacenamiento es Beegfs
+
+El software está montado y disponible con Modules
+
+
+------------------------------------------------
+              EL ALMACENAMIENTO
+------------------------------------------------
+
+El almacenamiento compartido por usuarios corre sobre el sistema Beegfs, cuenta con 230Tb compartidas
+Los archivos de usuario se encuentran en /hpcfs/home/
+Las carpetas compartidas se encuentran en /hpcfs/shared/
+Este sistema no cuenta con Backup y solo deben mantenerse los archivos necesarios para el trabajo en el cluster
+
+------------------------------------------------
+              EL SOFTWARE
+------------------------------------------------
+
+El software disponible a través de modulos puede consultarse con la opción
+        module avail
+y puede ser cargado dentro del trabajo o sesión interactiva con
+        module load <modulo>
+
+------------------------------------------------
+              EL MANEJADOR DE TRABAJOS
+------------------------------------------------
+
+El cluster funciona con el manejador de trabajos SLURM
+Toda la documentación está disponible en https://slurm.schedmd.com
+
+En la carpeta /hpcfs/shared/REAMDE se encuentran algunos ejemplos de scripts y documentación básica
+
+Para jobs con cpus:  /hpcfs/shared/README/testcpu.sh
+Para jobs con gpus:  /hpcfs/shared/README/testgpu.sh
+Para jobs interactivos: /hpcfs/shared/README/srun.txt
+
+Colas de trabajos: /hpcfs/shared/README/partitions.txt
+
+Comandos básicos: /hpcfs/shared/README/slurmdoc.txt
+
+[biol2205@hypatia README]$ cat slurmdoc.txt
+[biol2205@hypatia README]$ cat srun.txt
+[biol2205@hypatia README]$ cat partitions.txt
+[biol2205@hypatia README]$ cat testjob.sh
+
+segun la documentación oficial,
+sbatch: Este comando se utiliza para enviar scripts de trabajos como trabajos en el sistema de gestión de trabajos SLURM. Se utiliza para programar la ejecución de tareas de computación en el clúster.
+
+srun: Este comando se utiliza para ejecutar programas de forma interactiva o como parte de un script de trabajo en un entorno de computación paralela gestionado por SLURM. Proporciona una interfaz para iniciar programas en uno o más nodos del clúster.
+
+scancel: Este comando se utiliza para cancelar trabajos en el sistema de gestión de trabajos SLURM. Puedes usarlo para detener la ejecución de trabajos en curso o programados.
+
+squeue: Este comando se utiliza para mostrar información sobre los trabajos que están en cola para ejecución en el sistema de gestión de trabajos SLURM. Proporciona una lista de los trabajos en cola, así como información sobre su estado y otros detalles relevantes.
+
+#Use el archivo testjob.sh que ya se encuentra en el directorio de inicio. Examine detalladamente el encabezado del script. ¿Qué información/parámetros especifica? Copie el archivo testjob.sh a la carpeta scripts dentro de su carpeta personal.
+
+[biol2205@hypatia README]$ cp testjob.sh /hpcfs/home/cursos/biol2205/seccion-02/Grupo-04/ja.acostar1/tasks
+
+#Vaya a la carpeta scripts dentro de su directorio personal. Inicie un nodo interactivo utilizando srun --pty bash (en caso de que aún no lo haya hecho).
+
+[biol2205@hypatia tasks]$ srun --pty bash
+
+#Verifique la dirección donde se encuentra bash con el comando which.
+
+[biol2205@nodea-6 scripts]$ which nash
+/usr/bin/bash
+
+
+#Utilice el comando chmod +x para darle permiso de ejecución a testjob.sh. ¿Para qué sirven los flags <+|->rwx?
+
+[biol2205@nodea-6 scripts]$ chmod +x testjob.sh
+Los flags <+|->rwx se utilizan para especificar los permisos de chmod para modificar el archivo. En este caso, +x agrega el permiso de ejecución al archivo para que pueda ser ejecutado como un programa.
+
+#Utilice nano para modificar el script testjob.sh
+[biol2205@nodea-6 scripts]$ nano testjob.sh
+
+# ###### Zona de Parámetros de solicitud de recursos a SLURM ############################
+#
+#SBATCH --job-name=TestJOB              #Nombre del job
+#SBATCH -p short                        #Cola a usar, Default=short (Ver colas y límites en /hpcfs/shared/README/partitions.txt)
+#SBATCH -N 1                            #Nodos requeridos, Default=1
+#SBATCH -n 1                            #Tasks paralelos, recomendado para MPI, Default=1
+#SBATCH --cpus-per-task=1               #Cores requeridos por task, recomendado para multi-thread, Default=1
+#SBATCH --mem=2000              #Memoria en Mb por CPU, Default=2048
+#SBATCH --time=00:10:00                 #Tiempo máximo de corrida, Default=2 horas
+#SBATCH --mail-user= ja.acostar1@uniandes.edu.co
+#SBATCH --mail-type=ALL
+#SBATCH -o TEST_job.o%j                 #Nombre de archivo de salida
+#
+########################################################################################
+
+# ################## Zona Carga de Módulos ############################################
+#
+# ###### Zona de Ejecución de código y comandos a ejecutar secuencialmente #############
+# 
+host=`/bin/hostname`
+date=`/bin/date`
+echo "Soy un JOB de prueba"
+echo "Corri en la maquina: "$host
+echo "Corri el: "$date
+
+########################################################################################
+
+#Ahora sí, ejecute el script testjob.sh de la siguiente manera: bash testjob.sh o simplemente ./testjob.sh, ¿qué aparece impreso en la terminal? Consulte qué es el standard output y el standard error en el contexto de ejecución de un programa.
+
+[biol2205@hypatia scripts]$ bash testjob.sh
+Soy un JOB de prueba
+Corri en la maquina: hypatia.uniandes.edu.co
+Corri el: Mon Mar 4 19:36:22 -05 2024
+Ejecutando Script de R
+
+ Si tuviera un script lo ejecutaría asi: R CMD BATCH saludo.R
+
+Finalicé la ejecución del script
+
+[biol2205@hypatia scripts]$
+
+Standard Error (STDERR): Este es el flujo de datos estándar donde un programa imprime mensajes de error o advertencias
+Standard Output (STDOUT): Este es el flujo de datos estándar donde un programa imprime su salida normal
+
+
+#Utilice el comando module para listar los módulos existentes en Hypatia y los que tiene cargados en este momento (debe averiguar qué subcomando necesita).
+
+
+Listing / Searching sub-commands:
+---------------------------------
+  list                              List loaded modules
+  list                s1 s2 ...     List loaded modules that match the pattern
+ # avail | av                        List available modules
+  avail | av          string        List available modules that contain "string".
+  
+[biol2205@hypatia scripts]$ module avail
+
+```
+
+## 4. Creando *scripts* en Bash [0.50 puntos]
+
+```{bash}
+"Cree un nuevo archivo con el comando touch script2.sh.
+
+
+[biol2205@hypatia scripts]$ touch script2.sh
+
+[biol2205@hypatia scripts]$ ls
+script2.sh  testjob.sh
+
+#Abra el script para editarlo con algún editor de texto de la línea de comandos (le recomendamos utilizar nano). Copie el encabezado y la zona de parámetros de solicitud de recursos de SLURM necesarios para correr un script de Bash con en este manejador (puede copiarlos del archivo testjob.sh).En el nuevo script, escriba el comando necesario para cargar los módulos emboss/6.6.0 y blast/2.12.0+. Luego copie el siguiente comando: sixpack ~/<seccion>/<grupo>/Datos1/lambda_virus.fa` Finalmente, envié el script como un job corriendo el siguiente comando: sbatch script2.sh
+
+[biol2205@hypatia scripts]$ sbatch script2.sh
+Submitted batch job 196327
+
+#¿Qué aparece impreso en la terminal? ¿Qué hace este comando?
+ este comando hace que SLURM programará la ejecución del script script2.sh como un job en el clúster. Resultando en el número de job asignado por SLURM
+
+
+
+
+```

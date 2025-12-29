@@ -1,0 +1,128 @@
+---
+title: "Taller 4 - Normalidad y Transformaciones"
+subtitle: "Modulo de Inferencia"
+author: 
+ - Integrante 1 Nicolas Montoya Leon - 202310678
+ - Integrante 2 John Anderson Acosta - 202212004
+ - Integrante 3 Raquel Bautista Escobar - 202310296
+date: today
+format: html
+lang: es
+fig-align: center
+df-print: paged
+toc: true
+---
+
+Cargue los datos `bones-dimension.csv`, que se encuentran en la carpeta del taller de esta semana. Revise el contenido del archivo.
+
+:::{.callout-important}
+En el siguiente [link](https://www.openintro.org/book/statdata/?data=bdims) encontrara el significado de las variables del set de datos. 
+:::
+
+#### 1. Evaluando la normalidad de los datos [1.66 puntos].
+
+**a.** Evalúe la normalidad de los datos de peso y edad, (sin discriminar por el sexo). Recuerde que **debe** utilizar los dos métodos gráficos y el cuantitativo. Sustente sus resultados. 
+
+```{r}
+library(ggplot2)
+library(ggpubr)
+
+huesos<-read.csv("bones_dimensions.csv")
+huesos
+
+normalidad_p <- shapiro.test(huesos$wgt)
+normalidad_e <- shapiro.test(huesos$age)
+
+normalidad_p
+normalidad_e
+
+ggplot(huesos, aes(sample = wgt)) +
+    geom_qq() +
+    geom_qq_line()
+
+ggplot(huesos, aes(sample = age)) +
+    geom_qq() +
+    geom_qq_line()
+
+new1<- log(huesos)
+new2<- sqrt((huesos)+1/2)
+
+ggplot(new1, aes(sample = wgt)) +
+    geom_qq() +
+    geom_qq_line()
+
+ggplot(new2, aes(sample = age)) +
+    geom_qq() +
+    geom_qq_line()
+
+nnormalidad_p <- shapiro.test(new1$wgt)
+nnormalidad_p
+
+nnormalidad_a <- shapiro.test(new2$age)
+nnormalidad_a
+
+#Conclusion: Tanto para los datos de age como de wgt, se presentan distribuciones no normales, esto comprobado tanto por medios gráficos como cuantitativos. Se intentó realizar tranformaciones, sin embargo, la magnitud de la diferencia con la normalidad es tante que las tranformanciones a pesar de mejorar la distribución, siguen teniendo un comportamiento no normal.
+
+```
+
+#### 2. Transformaciones [1.66 puntos]
+
+**a.** La profundidad del pecho de las mujeres no sigue una distribución normal. Explique por qué.
+
+```{r}
+library(tidyverse)
+
+pecho_f<-huesos|>
+  filter (sex == '0')
+pecho_f
+
+normalidad_ch<- shapiro.test(pecho_f$che.de)
+
+normalidad_ch
+
+ggplot(pecho_f, aes(sample = che.de)) +
+    geom_qq() +
+    geom_qq_line()
+
+# Por metodos cuantitativos, el resultado arrojado por el test de Shapiro indica una distribución no nomal. Esto tambien se corrobora mediante el metodo gráfico, ya que obtuvimos una grafica de tipo no lineal. Esto se debe a la forma en la que se mide esta profundidad, al medirse a la altura del pezon respecto a la columa, los senos tienen una variación de tamaño mayor respecto a la muestra masculina.
+
+
+```
+
+**b.** Realice la transformación adecuada sobre los datos de la profundidad del pecho de las mujeres de tal forma que sigan una distribución normal (muestre que en efecto luego de la transformación los datos siguen una distribución normal).
+
+```{r}
+pecho_f<-huesos|>
+  filter (sex == '0')
+pecho_f
+
+n_pecho_f <- 1/(pecho_f)
+
+normalidad_chn<- shapiro.test(n_pecho_f$che.de)
+
+normalidad_chn
+
+ggplot(n_pecho_f, aes(sample = che.de)) +
+    geom_qq() +
+    geom_qq_line()
+
+# Por metodos cuantivos (Shapiro test) se evidencia la normalidad a partir de eu p-value = 0.27. Esto mismo se evidencia a partir del metodo gráfico, donde se evidencia una mejor relación lineal, que es indicativo de normalidad.
+
+
+```
+
+## 3. Discusiones [1.66 puntos]
+
+**a.** ¿Qué puede concluir de los datos de la profundidad del pecho de las mujeres? ¿Qué implicaciones tiene esto para el análisis de los datos?
+
+
+**b.** ¿Qué implicaciones tiene el hecho de que los datos no sigan una distribución normal para el análisis de los datos?
+
+```{r}
+
+#a) En principio los datos no se encuentran dentro de una distribución normal, esto se debe a la forma en la que se realiza la medición, lo cual incrementa la variabilidad (en este caso en función del tamaño de los senos). El encontrar una distribución no normal a la hora de compararla con districuiones normales que deberian ser equiparables como la de la profundidad del pecho de los hombres. El realizar la normalización de los datos permitiría efectuar una comparación directa y mucho mas apropiada a nivel de analisis, cosa que no sería posible al intentar comparar una distribución normal contra una no normal.
+
+#b) Esto tiene principalmente 2 implicaciones; como se mencionó anteriormente, esto dificulta la comparabilidad con otros sets de datos. Como segundo punto fundamental indica que existen factores no considerados que afectan los datos y respectiva variabilidad, lo que implicaría nuevos planteamientos respecto al anlisis de los datos o incluso la formulacion de las hipótesis.
+
+```
+
