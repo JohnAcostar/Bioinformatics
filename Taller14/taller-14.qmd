@@ -1,0 +1,198 @@
+---
+title: "Taller 14"
+subtitle: "Correlación, Regresión Lineal, Regresión múltiple y GLMs"
+author: 
+ - Integrante 1 Nicolas Montoya Leon - 202310678
+ - Integrante 2 John Anderson Acosta - 202212004
+ - Integrante 3 Raquel Bautista Escobar - 202310296
+date: today
+format: html
+---
+
+En **todos** los puntos del taller **debe** realizar todos los siguientes pasos:
+
+Lea muy bien el enunciado y la pregunta asociada, además, asegúrese de entender lo que se pide. En **todos** los puntos del taller **debe** realizar todos los siguientes pasos:
+
+i. De acuerdo a la descripción del estudio, formular una pregunta de investigación con sus respectivas hipótesis y predicciones.
+ii. Identificar e indicar cuál es la variable dependiente y cuál la independiente y explique porqué.
+iii. Evaluar la normalidad de las variables que lo requieran.
+iv. Escoger el análisis estadístico correcto.
+v.  Interprete sus resultados **incluyendo gráficas**. Incluya el Valor-P, valor observado del estadístico de prueba, alfa escogido, coeficiente de determinación ($R^2$) o coeficiente de correlación ($r$ y $r^2$), porcentaje explicado y porcentaje no explicado por el modelo. Discutir los resultados.
+
+**1.** **[0.83 puntos]** En el archivo `Cocodrilos.xlxs` se presentan los datos crudos de un estudio donde se pretendía medir si existe alguna relación entre el tamaño del huevo (en mm) con el tamaño de la nidada (promedio de los huevos en la puesta) en el Yacaré Overo (Caiman latirostris). Realice el respectivo análisis estadístico y discuta las implicaciones biológicas de este estudio. Realice el gráfico correspondiente.
+
+```{r}
+"i.
+ Pregunta de investigación: ¿Cuak es la relación entre el tamaño de los huevos y el tamaño de la nidada de Caiman latirostris?
+ H0= Los tamaños de huevo y nidada son independientes el uno del otro
+ HA= Al aumentar el tamaño de la nidada, disminuye el tamaño de los huevos "
+"ii
+ La variable independiente corresponde al tamaño de la nidada y la dependiente corresponde al tamaño del huevo; esto ya que dentro de los datos el tamaño de la nidada presenta continuidad y categoricidad que permite agrupar los datos"
+"iii"
+library(readxl)
+cocodrilos <- read_excel("Cocodrilos.xlsx")
+norm <- shapiro.test(cocodrilos$ClutchS)
+norm
+
+"iv"
+ spearman_test <- cor.test(cocodrilos$ClutchS, cocodrilos$egg_size, method = "spearman")
+ spearman_test
+ 
+"V"
+
+library(ggplot2)
+
+ggplot(cocodrilos, aes(x = ClutchS, y = egg_size)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "Relación entre Tamaño de la Nidada y Tamaño de los Huevos",
+       x = "Tamaño de la Nidada (ClutchS)",
+       y = "Tamaño de los Huevos (egg_size)")
+
+"P-valiue="
+spearman_test$p.value
+"Estadistico="
+spearman_test$statistic
+
+"Alpha = 0.05"
+R2<-as.numeric(spearman_test$estimate)^2
+c("R2=", R2)
+
+porcentaje_explicado <- R2 * 100
+porcentaje_no_explicado <- (1 - R2) * 100
+
+"Porcentaje explicado:"
+porcentaje_explicado
+"Porcentaje no explicado:"
+porcentaje_no_explicado
+
+"Se evidencia un clara coorelación entre los datos al contar con un p-value muy bajo que respalda de manera contundente la hipótesis alterna"
+
+ 
+```
+
+
+**2.** **[0.83 puntos]** Usted quiere saber qué factores de la Rana Picuda, _Leptodactylus fuscus_, se encuentran asociadas al desempeño locomotor. Así mismo, tiene interés en estudiar si el tamaño corporal tiene relación con el peso. Los datos obtenidos se encuentran en la base de datos `costos.txt`.
+
+```{r}
+"i
+ En este caso se analizaran las variables por separado relacionando peso/tamaño y para el desempeño locomotor se realizó un analisis multiple con todas las variables, por lo anterior:
+Pregunta de investigación: ¿Las variables peso, tamaño y reservas energéticas tienen un impacto en la velocidad maxima?
+H0 = El desempeño locomotor no depende de los parámetros propuestos
+HA = El desempeño locomotor se ve influenciado en diferentes medidas por los parametros propuestos"
+
+"ii
+En este caso la variable independiente "
+
+"iii"
+
+ranas<- read.table("costos.txt", head = TRUE)
+ranas
+
+shapiro.test(ranas$svl_cm)
+shapiro.test(ranas$peso_g)
+shapiro.test(ranas$velmax)
+shapiro.test(ranas$Reservas_energeticas)
+
+"iv"
+modelo_locomotor <- lm(velmax ~ svl_cm + peso_g + Reservas_energeticas, data = ranas)
+modelo_locomotor
+
+modelo_peso <- lm(peso_g ~ svl_cm, data = ranas)
+modelo_peso
+
+"v"
+
+ggplot(ranas, aes(x = svl_cm, y = peso_g)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "Relación entre Tamaño Corporal y Peso",
+       x = "Tamaño Corporal (svl_cm)",
+       y = "Peso (g)")
+
+ggplot(ranas, aes(x = svl_cm, y = velmax)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "Relación entre Tamaño Corporal y Velocidad Máxima",
+       x = "Tamaño Corporal (svl_cm)",
+       y = "Velocidad Máxima (velmax)")
+
+ggplot(ranas, aes(x = peso_g, y = velmax)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "Relación entre Peso y Velocidad Máxima",
+       x = "Peso (g)",
+       y = "Velocidad Máxima (velmax)")
+
+ggplot(ranas, aes(x = Reservas_energeticas, y = velmax)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "Relación entre Reservas Energéticas y Velocidad Máxima",
+       x = "Reservas Energéticas",
+       y = "Velocidad Máxima (velmax)")
+
+```
+
+
+**3.** El conjunto de datos `forestfires.csv` [Cortez & Morais, 2007](https://repositorium.sdum.uminho.pt/bitstream/1822/8039/1/fires.pdf) contiene información de los incendios ocurridos en el parque natural Montesinho, Portugal entre los años 2000 y 2003. Información más detallada de las variables de este conjunto de datos se puede encontrar en [Forest Fires Data Set](https://archive.ics.uci.edu/ml/datasets/Forest+Fires). 
+
+```{r}
+incendios<-read.csv("forestfires.csv")
+incendios
+
+```
+
+
+**a.** **[0.83 puntos]** Determine el efecto del índice FFMC y el mes (de forma conjunta) sobre el área total quemada por el incendio.
+```{r}
+area_qem <-lm(area ~ FFMC + month, data = incendios)
+area_qem
+```
+
+
+**b.** **[0.83 puntos]**Determine el efecto de los índices FFMC, DMC e ISI el área total quemada por el incendio.
+
+```{r}
+area_qem2 <-lm(area ~ FFMC + DMC + ISI, data = incendios)
+area_qem2
+
+```
+
+
+## GLMs
+
+**4.** **[0.83 puntos]** `proteinas.xlsx` resume los resultados de un estudio donde se pretendía medir el desempeño de la proteína globina, encargada del transporte de oxigeno, y su desempeño a diferentes temperaturas. Realice el análisis estadístico respectivo y discuta las implicaciones biológicas de este estudio.
+
+```{r}
+
+proteina<-read_excel("proteinas.xlsx")
+
+shapiro.test(proteina$Temp)
+
+modelo_logistico <- glm(Prot_Perf ~ Temp, data = proteina, family = binomial(link = "logit"))
+
+ggplot(proteina, aes(x = Temp, y = Prot_Perf)) +
+  geom_point() + 
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE) +
+  labs(x = "Variable continua (x)", y = "Probabilidad de y=1") +
+  ggtitle("Relación entre x y la probabilidad de y=1")
+```
+
+
+
+**5.** **[0.83 puntos]** `genotype.csv` contiene datos del rendimiento de tres genotipos de plantas (A, B, C). Analice el efecto de diferentes genotipos en el rendimiento de la planta mientras se controla el efecto de la altura de la planta.
+
+```{r}
+genotipo<-read.csv("genotype.csv")
+modelo <- lm(yield ~ genotype + height, data = genotipo)
+modelo
+
+ggplot(genotipo, aes(x = height, y = yield, color = genotype)) +
+  geom_point() +                # Agregar puntos de datos
+  geom_smooth(method = "lm") +  # Agregar líneas de ajuste lineal
+  labs(title = "Efecto de los genotipos en el rendimiento de la planta",
+       x = "Altura de la planta",
+       y = "Rendimiento de la planta")
+```
+
+**6.** **[0.83 puntos]** El conjunto de datos `winequality.tsv` contiene datos de información fisicoquímica y sensorial de variantes del vino portugues *Vinho Verde*. Los detalles de este conjunto de datos y de las variables registradas se pueden encontrar en: [Wine Quality Data Set, UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/Wine+Quality). Su objetivo es proponer el modelo lineal que mejor prediga la calidad (variable `quality`). Para esto, escoja por lo menos 3 variables y determine qué variable (o combinación de variables) entrega el mejor modelo para cumplir con su objetivo.

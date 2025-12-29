@@ -1,0 +1,505 @@
+---
+title: "Taller 13"
+subtitle: "ANOVA & Kruskal-Wallis"
+author: 
+  Integrante 1 John Anderson Acosta - 202212004
+ - Integrante 2 Raquel Bautista Escobar - 202310296
+ - Integrante 3 Nicolas Montoya Leon - 202310678
+date: today
+format: html
+lang: es
+---
+
+En **todos** los puntos del taller **debe** realizar todos los siguientes pasos:
+
+i. Explorar visualmente el conjunto de datos asociado a la investigación.
+
+```{r}
+
+library(rstatix)
+library(dplyr)
+library(ggplot2)
+library(performance)
+library(statsExpressions)
+data <- read.table("punto1.txt", header = TRUE, sep = "\t")  
+
+
+ggplot(data, aes(x = Tipo_ambiente, y = Masa_cono, fill= Tipo_ambiente)) +
+  geom_boxplot(alpha = 0.7, color="black") +  
+  geom_jitter(width = 0.2, alpha = 0.8)
+  labs(
+    x = "Tipo de Ambiente",
+    y = "Masa del Cono (kg)",
+    caption = "Comparación de la distribución de la masa del cono entre diferentes tipos de ambientes."
+  ) +
+  theme_minimal()  +
+  theme(plot.caption = element_text(hjust = 0.5, size = 10))  # Ajustar la leyenda
+
+# Crear un Histograma para entender como es la distribución, si se necesita hacer un ajuste de normalidad, observar outliers y hacer preubas de ajustes de eso. 
+
+ggplot(data, aes(x = Masa_cono)) +
+  geom_histogram(bins = 16, fill = "firebrick", color = "black") +  
+  labs(
+    x = "Masa del Cono (kg)",
+    y = "Frecuencia",
+    caption = "Distribución de la masa del cono en todos los tipos de ambientes."
+  ) +
+  theme_minimal() +
+  theme(plot.caption = element_text(hjust = 0.4, size = 10))  # Ajustar la leyenda
+
+
+ggplot(data, aes(x = Masa_cono, fill = Tipo_ambiente)) +
+  geom_density(alpha = 0.5) +  # Density plot with transparency
+  labs(
+    x = "Masa del Cono (kg)",
+    y = "Densidad",
+    caption = "Distribución de la masa del cono por tipo de ambiente."                                        
+  ) +
+  theme_minimal()  +
+  theme(plot.caption = element_text(hjust = 0.4, size = 10))  # Ajustar la leyenda
+
+
+```
+
+
+ii. Plantear la hipótesis nula y la alternativa teniendo en cuenta la pregunta de investigación mencionada.
+
+```{r}
+#Ho: El tamaño del cono de la especie de pino varia de igual forma en los tres tipos de ambientes en USA
+
+#HA: El tamaño del cono de la especie de pino no varia de igual forma en al menos un tipo de ambiente en USA 
+
+```
+
+iii. Defina el nivel de significancia ($\alpha$) y justificar su selección.
+```{r}
+#Usaremos un alfa de 0.05 
+#$Alfa de 0.05 = 5%
+#Lo justificamos a causa de que la elección tiene un equilibrio entre los errores de tipo I y de tipo II: 𝛼= 0.05, entre el riesgo de errores de tipo I (falsos positivos) y de tipo II (falsos negativos). Asimismo, es lo suficientemente estricto como para minimizar los falsos positivos, pero no tanto como para aumentar el riesgo de pasar por alto un efecto verdadero. Igualmente, lo justificamos porque es un modelo estandar, que se usa en mucho MUCHOS articulos, incluido en este de (Edelaar & Benkman, 2006) DOI: 10.1111/j.1420-9101.2006.01113.x, Por estos motivos decidimos usar un alfa de 0.05
+```
+
+iiv. Evaluar la normalidad de las variables que lo requieran.
+
+```{r}
+#Como se observo en la curva de densidad en la 3 imagen del punto 1, se observa que las variables de cada ambiente siguen una distribucion normal o gaussiana, esto se justifica a causa de su forma de campana, ser simetricas y centradas en un pico, No obstante para estar seguros de esta decision, se procede a hacer una prueba de normalidad; como la de Shapiro-Wilk, 
+
+shapiro_test <- shapiro.test(data$Masa_cono)
+print(shapiro_test)
+
+#Inicialmente, se puede pensar que los datos no siguen una distribucion normal, puesto que el valor-p es menor que la significancia asignada, Sin embargo, como se vio en clase esto son la normalidad global de los datos y se tiene que hacer el test para cada categoria o residuo que lo componen
+
+# Ambiente 1: Isla con ardillas ausentes
+data_I <- data[data$Tipo_ambiente == "I", ]
+shapiro_test_I <- shapiro.test(data_I$Masa_cono)
+print("Shapiro-Wilk test para Tipo_ambiente I:")
+print(shapiro_test_I)
+
+# Ambiente 2: Isla con ardillas presentes
+data_II <- data[data$Tipo_ambiente == "II", ]
+shapiro_test_II <- shapiro.test(data_II$Masa_cono)
+print("Shapiro-Wilk test para Tipo_ambiente II:")
+print(shapiro_test_II)
+
+# Ambiente 3: Continente con ardillas presentes
+data_III <- data[data$Tipo_ambiente == "III", ]
+shapiro_test_III <- shapiro.test(data_III$Masa_cono)
+print("Shapiro-Wilk test para Tipo_ambiente III:")
+print(shapiro_test_III)
+
+
+#Al observar las pruebas de cada categoria, se puede concluir que el rasgo que mas resalta es que todas las categorias tienen un valor-p mayor a la significancia asignada. En este sentido, la variables siguen una distribucion normal, puesto como se vio en clase el test de shapiro-wilk tiene como Ho=los datos siguen una distribucion f(x), en este caso normal y como HA= Los datos NO siguen una distribución normal, por tal motivo y considerando el valor-p resultante no se rechaza la Ho, por lo tanto, concluimos que las distribuciones de cada categoria siguen una distribución Normal o si poseen una normalidad.
+
+```
+
+v. Escoger la prueba estadística adecuada (validar que se cumplan todos los supuestos para su selección).
+
+```{r}
+# Debido que cumple los suspuestos de que
+#1) Las muestras son independientes o aleatorias
+#2)la Varianza es homogenea entre las variables, esto lo sabemos ya que al observar el boxplot del primer punto estos tienen una varianza entre los datos similar
+#3) Los errores se distribuyen normalmente
+library(performance)
+library(statsExpressions)
+library(ggplot2)
+
+# Del mismo modo se usara las funciones de Aov() de anova para probar estos supuestos
+
+anovamodel <- aov(Masa_cono ~ Tipo_ambiente, data = data)
+print(anovamodel)
+
+# observar autocorrelacion
+autocorr_result <- check_autocorrelation(anovamodel)
+print(autocorr_result)
+
+# observar normalidad
+normality_result <- check_normality(anovamodel)
+print(normality_result)
+
+# observar Heterocedasticidad(realmente)
+heteroskedasticity_result <- check_heteroskedasticity(anovamodel)
+print(heteroskedasticity_result)
+
+# observar outliers
+outliers_result <- check_outliers(anovamodel)
+print(outliers_result)
+
+
+#AL investigar encontramos que la homoscedastidad se refiere que la varianza es homogenea entre los datos
+
+#Finalmente, concluimos que los datos cumplen los supuestos, esto siendo justificado con las pruebas realizadas, de este modo definiremosy aplicaremos la pureba estadistica de ANOVA.
+
+
+
+
+```
+
+vi. Aplicar la prueba estadística.
+
+```{r}
+
+#Se usara una ANOVA de un factor, esto debido a que tenemos una variable o factor independiente y queremos saber si las variaciones o niveles de ese factor tienen un efecto medible.
+
+tukey_test <- TukeyHSD(anovamodel)
+print(tukey_test)
+
+
+plot(tukey_test)
+
+residuales <- residuals(anovamodel)
+ajuste <- fitted(anovamodel)
+
+ggplot(data.frame(Fitted = ajuste, Residuals = residuales), aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(x = "Valores ajustados", y = "Residuales") +
+  theme_minimal()
+
+anovatbl <- data |>
+  anova_test(Masa_cono ~ Tipo_ambiente)
+
+
+print(anovatbl)
+
+```
+
+vii. Discutir sus resultados (responder las preguntas en cada punto).
+
+```{r}
+#Se encuentra en la seccion de abajo
+```
+
+
+**1.** **[2.5 puntos]** Los datos `Punto1.txt` representan el tamaño de cono (masa) de una especie de pino en 16 sitios de estudio en tres tipos de ambientes en el occidente de USA (Edelaar & Benkman, 2006). Los tres ambientes hacían referencia a:
+
+* Ambiente 1: Isla con ardillas ausentes 
+* Ambiente 2: Isla con ardillas presentes 
+* Ambiente 3: Continente con ardillas presentes. 
+
+a. Existen diferencias entre los tratamientos? 
+
+```{r}
+
+#Las comparaciones múltiples de medias de Tukey de ANOVA muestran que existen diferencias significativas entre algunos de los ambientes, concretamente entre II-I y III-I, ya que sus p-valores ajustados son muy bajos (0,0000028 y 0,0000033 respectivamente, lo que se rechazaria la Ho= de que siguen un tamaño similar el cono del pino). Sin embargo, no hay diferencias significativas entre III-II (p-valor 0,9925198). Por lo que, se concluiria que este tipo de ambiente si tiene un tamaño del cono similar
+
+```
+
+
+b. ¿Qué tratamiento afectó en mayor medida la supervivencia? (Utilice las medias obtenidas para cada tratamiento para responder a esta pregunta).
+
+```{r}
+means <- data |>
+  group_by(Tipo_ambiente) |>
+  summarise(mean_Masa_cono = mean(Masa_cono))
+print(means)
+
+most_affected <- means %>%
+  filter(mean_Masa_cono == max(mean_Masa_cono) | mean_Masa_cono == min(mean_Masa_cono))
+print(most_affected)
+
+medias <- ggplot(data, aes(x = Tipo_ambiente, y = Masa_cono, fill = Tipo_ambiente)) +
+  geom_boxplot() +
+  geom_jitter(color = "black", size = 1, width = 0.2) +
+  labs(x = "Tipo de Ambiente", y = "Masa del Cono", fill = "Tipo de Ambiente") +
+  theme_minimal() +
+  geom_text(data = means, aes(label = round(mean_Masa_cono, 2), y = mean_Masa_cono + 0.2), color = "cyan", size = 3)
+
+print(medias)
+#Con toda esta información reunida, concluimos que el tratamiento que más afecta a la supervivencia es el I(Ambiente 1: Isla con ardillas ausentes), con una media de 8,90, y los tratamientos que menos afectan a la supervivencia son el II y el III, con medias de 6,08 y 6,12, respectivamente.
+```
+
+c. ¿Qué tratamiento afectó en menor medida la supervivencia?
+```{r}
+
+#El que menos afecto en menor medida la supervivencia fue el ambiente o trantamiento 2(Isla con ardillas presentes )
+
+```
+
+d. Realice una gráfica para ilustrar los resultados.
+```{r}
+
+library(ggsignif)
+anovatbl <- summary(anovamodel)
+anova_caption <- paste0("ANOVA: F(", 
+                        anovatbl[[1]]["Tipo_ambiente", "Df"], ", ",
+                        anovatbl[[1]]["Residuals", "Df"], 
+                        ") = ", round(anovatbl[[1]]["Tipo_ambiente", "F value"], 2),
+                        ", p = ", format.pval(anovatbl[[1]]["Tipo_ambiente", "Pr(>F)"], digits = 2))
+
+ggplot(data, 
+       aes(
+         x = Tipo_ambiente, 
+         y = Masa_cono, 
+         fill = Tipo_ambiente
+         )) +
+  geom_boxplot(alpha = 0.5) +
+  geom_jitter(width = 0.2, alpha = 0.7) +
+  labs(
+    y = "Masa del Cono",
+    subtitle = anova_caption
+    ) +
+  geom_signif(
+    comparisons = list(
+      c("I", "II"),
+      c("I", "III"),
+      c("II", "III")
+    ),
+    step_increase = 0.2,
+    map_signif_level = TRUE
+  ) +
+  theme_minimal()
+
+#Del mismo modo, se puede observar las graficas creadas anteriormente
+```
+
+e. Conclusión biológica.
+```{r}
+#Hay diferencias significativas en Masa_cono entre ambientes. El entorno I tiene el tamaño del cono de los pino más alto, lo que indica un mayor efecto, como se menciono anteriormente. Ahora bien, Los entornos II y III tienen Masa_cono similares y más bajos que el ambiente I, lo que indica efectos menores de supervivencia o tamaños de conos menores. Esto sugiere que las condiciones ambientales en I son más propicias para valores más altos del tamaño del cono de los pino más alto en comparación con II y III. Sumado el hecho de que los gráficos y las pruebas estadísticas muestran que efectivamente cada categoria sigue una distribución normal, no obstante, se observa que si existe almenos una varianza entr el tamaño del cono de la especie del pino, en este caso en el ambiente 1, por consiguiente y siendo constante con el valor-p y las graficas, se rechaza la Ho y se toma como la HA como una explicacion de la varianza entre el tamaño del cono,  algo que se observa en la ultima grafica, en la que el boxplot rojo(ambiente I) Esta considerablemente mas arriba que las otras categorias.
+```
+
+
+**2.** **[2.5 puntos]** Los datos `Punto2.tsv` corresponden a los resultados después del siguiente experimento: Se midió el tiempo de supervivencia de una serie de animales a los cuales se les asignó aleatoriamente un tipo de veneno (I, II y III) y un tipo de tratamiento (A, B, C, D). 
+
+a. ¿Existen diferencias entre los tratamientos? 
+
+```{r}
+
+library(ggplot2)
+
+data <- read.table("punto2.tsv", header = TRUE, sep = "\t")  
+
+
+
+ggplot(data, aes(x = Tratamiento, y = Supervivencia, fill = Veneno)) +
+  geom_boxplot() +  # Box plot with fill color based on `Veneno`
+  labs(
+    x = "Tratamiento",
+    y = "Supervivencia",
+    fill = "Veneno",
+    caption = "Distribución de la supervivencia por tratamiento y veneno."
+  ) +
+  theme_minimal() +
+  theme(plot.caption = element_text(hjust = 0.4, size = 10))
+
+# Scatter plot to visualize the relationship between treatment and survival
+ggplot(data, aes(x = Tratamiento, y = Supervivencia, color = Veneno)) +
+  geom_point(size = 3) +  # Scatter plot with point size
+  labs(
+    x = "Tratamiento",
+    y = "Supervivencia",
+    color = "Veneno",
+    caption = "Relación entre tratamiento y supervivencia, diferenciada por tipo de veneno."
+  ) +
+  theme_minimal()+
+  theme(plot.caption = element_text(hjust = 0.4, size = 10))
+
+
+ggplot(data, aes(x = Supervivencia, fill = Tratamiento)) +
+  geom_density(alpha = 0.5) +
+  labs(
+    x = "Supervivencia",
+    y = "Densidad",
+    caption = "Distribución de la supervivencia por tratamiento."
+  ) +
+  theme_minimal() +
+  theme(plot.caption = element_text(hjust = 0.4, size = 10))
+
+ggplot(data, aes(x = Supervivencia)) +
+  geom_histogram(bins = 10, fill = "firebrick", color = "black") +
+  facet_grid(. ~ Tratamiento) +  
+  labs(
+    x = "Supervivencia",
+    y = "Frecuencia",
+    caption = "Histograma de la supervivencia por tratamiento por categoria."
+  ) +
+  theme_minimal() +
+  theme(plot.caption = element_text(hjust = 0.4, size = 10))
+
+
+
+#ii. Plantear la hipótesis nula y la alternativa teniendo en cuenta la pregunta de investigación mencionada.
+
+
+#Ho: El tiempo de supervivencia de una serie de animales varia de igual forma en los 3 tipos de venenos usados y no varia en los 4 tratamientos
+
+#HA: El tiempo de supervivencia de una serie de animales no varia de igual forma en al menos un tipo de veneno o tratamiento usado
+
+
+
+```
+```{r}
+#iii
+
+#Usaremos un alfa de 0.05 
+#$Alfa de 0.05 = 5%
+#Lo justificamos con los mismos motivos que el anterior, con los principios de que la elección tiene un equilibrio entre los errores de tipo I y de tipo II: 𝛼= 0.05, entre el riesgo de errores de tipo I (falsos positivos) y de tipo II (falsos negativos). De igual modo que en el anterior, es lo suficientemente estricto como para minimizar los falsos positivos, pero no tanto como para aumentar el riesgo de pasar por alto un efecto verdadero. Igualmente, lo justificamos porque es un modelo estandar, que se usa en mucho MUCHOS articulos, Por estos motivos decidimos usar un alfa de 0.05
+
+#iv. Evaluar la normalidad de las variables que lo requieran.
+
+shapiro_test <- shapiro.test(data$Supervivencia)
+print(shapiro_test)
+
+#Como se menciono en le punto 1, se puede pensar que los datos no siguen una distribucion normal, puesto que el valor-p es menor que la significancia, sin embargo, se observan los residuos o cada categoria y se concluye a partir de esta.
+
+# Tratamiento A: 
+data_I <- data[data$Tratamiento == "A", ]
+shapiro_test_I <- shapiro.test(data_I$Supervivencia)
+print("Shapiro-Wilk test para Tipo_ambiente I:")
+print(shapiro_test_I)
+
+# Tratamiento B: 
+data_II <- data[data$Tratamiento == "B", ]
+shapiro_test_II <- shapiro.test(data_II$Supervivencia)
+print("Shapiro-Wilk test para Tipo_ambiente II:")
+print(shapiro_test_II)
+
+# Tratamiento c: 
+data_III <- data[data$Tratamiento == "C", ]
+shapiro_test_III <- shapiro.test(data_III$Supervivencia)
+print("Shapiro-Wilk test para Tipo_ambiente III:")
+print(shapiro_test_III)
+
+#Tratamiento D
+
+data_IV <- data[data$Tratamiento == "D", ]
+shapiro_test_IV <- shapiro.test(data_IV$Supervivencia)
+print("Shapiro-Wilk test para Tipo_ambiente III:")
+print(shapiro_test_IV)
+
+
+#Al observar las pruebas de cada categoria, se puede concluir que el rasgo que mas resalta es que todas las categorias tienen un valor-p mayor a la significancia asignada. En este sentido, la variables siguen una distribucion normal
+
+```
+
+```{r}
+
+#v. Escoger la prueba estadística adecuada (validar que se cumplan todos los supuestos para su selección).
+
+# Debido que cumple los suspuestos de que
+#1) Las muestras son independientes o aleatorias
+#2)la Varianza es homogenea entre las variables,  similar
+#3) Los errores se distribuyen normalmente
+library(performance)
+library(statsExpressions)
+library(ggplot2)
+
+# Del mismo modo se usara las funciones de Aov() de anova para probar estos supuestos
+
+anova_result <- aov(Supervivencia ~ Tratamiento, data = data)
+summary(anova_result)
+
+# observar autocorrelacion
+autocorr_result <- check_autocorrelation(anova_result)
+print(autocorr_result)
+
+# observar normalidad
+normality_result <- check_normality(anova_result)
+print(normality_result)
+
+# observar Heterocedasticidad(realmente)
+heteroskedasticity_result <- check_heteroskedasticity(anova_result)
+print(heteroskedasticity_result)
+
+# observar outliers
+outliers_result <- check_outliers(anova_result)
+print(outliers_result)
+
+
+#AL investigar encontramos que la homoscedastidad se refiere que la varianza es homogenea entre los datos
+
+#Finalmente, concluimos que los datos no cumplen los supuestos, esto siendo justificado con las pruebas realizadas, de este modo definiremos y aplicaremos la pureba estadistica de Kruskal-Wallis.
+
+
+```
+```{r}
+
+library(rstatix)  # For Kruskal-Wallis test
+
+# Perform Kruskal-Wallis test
+kruskal_result <- kruskal_test(Supervivencia ~ Tratamiento, data = data)
+print(kruskal_result)
+
+#Podemos concluir que existe evidencia estadística para refutar la hipótesis nula de que no hay diferencias entre los tratamientos, basándonos en los resultados del análisis de Kruskal-Wallis, que muestran un valor p de 0.00425. Esto indica que al menos dos tratamientos tienen diferentes medianas de tiempo de supervivencia.
+
+```
+
+b. ¿Qué tratamiento afectó en mayor medida la supervivencia? (Utilice las medias obtenidas para cada tratamiento para responder a esta pregunta).
+
+```{r}
+means_by_tratamiento <- data |>
+  group_by(Tratamiento) |>
+  summarise(mean_Supervivencia = mean(Supervivencia))
+
+# Identificar el tratamiento con la mayor media de supervivencia
+tratamiento_maxima_supervivencia <- means_by_tratamiento %>%
+  filter(mean_Supervivencia == max(mean_Supervivencia)) %>%
+  pull(Tratamiento)
+
+tratamiento_maxima_supervivencia
+
+#El tratramiento que presenta mayor medida de supervivencia es el B
+```
+
+
+c. ¿Hay diferencias entre los venenos? ¿Qué veneno afectó en menor medida la supervivencia?
+```{r}
+# Calcular las medias de supervivencia para cada veneno
+means_by_veneno <- data %>%
+  group_by(Veneno) %>%
+  summarise(mean_Supervivencia = mean(Supervivencia))
+
+# Identificar el veneno que afectó en menor medida la supervivencia
+veneno_minima_supervivencia <- means_by_veneno %>%
+  filter(mean_Supervivencia == min(mean_Supervivencia)) %>%
+  pull(Veneno)
+
+# Imprimir el veneno que afectó en menor medida la supervivencia
+veneno_minima_supervivencia
+
+# Realizar ANOVA de dos vías para evaluar la interacción
+anova_result <- anova_test(data, Supervivencia ~ Tratamiento * Veneno)
+print(anova_result)
+
+
+```
+
+d. ¿Existe interacción? Incluya el Valor-P y el gráfico.
+
+```{r}
+#Si exites interaccion debido al valor-p que es menor a la significancia
+interaction_plot(
+  data$Tratamiento, data$Veneno, data$Supervivencia,
+  xlab = "Tratamiento", ylab = "Supervivencia",
+  legend_labels = c("Veneno I", "Veneno II", "Veneno III")
+)
+```
+
+e. Conclusión biológica
+
+```{r}
+#Tratamientos: Existen diferencias significativas en la supervivencia entre al menos dos tratamientos. Esto sugiere que los diferentes tratamientos tienen un efecto notable en la supervivencia de los animales.
+
+Veneno: También hay diferencias significativas en la supervivencia entre al menos dos tipos de veneno. Esto indica que ciertos tipos de veneno pueden ser más letales que otros.
+
+Interacción: No se detectó una interacción significativa entre el tipo de tratamiento y el tipo de veneno en términos de su efecto en la supervivencia. Esto significa que el efecto de un tratamiento no se modifica significativamente por el tipo de veneno, y viceversa.
+```
+

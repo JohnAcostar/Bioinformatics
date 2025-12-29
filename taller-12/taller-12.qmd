@@ -1,0 +1,393 @@
+---
+title: "Taller 12 - Pruebas de permutación y bootstrap"
+subtitle: "Modulo de Inferencia"
+author: 
+ - Integrante 1
+ - Integrante 2
+ - Integrante 3
+date: today
+format: html
+lang: es
+fig-align: center
+df-print: paged
+toc: true
+---
+
+**1.** _Phrynosoma mcallii_ (lagarto cornudo o llora sangre) es una especie de lagarto que tiene muchas características inusuales, incluyendo la habilidad de expulsar sangre por sus ojos. La especie es nombrada por la serie de cuernos que rodean su cabeza. Los herpetólogos recientemente han propuesto la idea de que estas proyecciones pueden estar relacionadas con protección ante la depredación, tomando ventaja sobre su principal depredador _Lanius lodovicianus_, un pequeño pájaro que mata a sus presas con una espina y los guarda para comérselos luego.
+
+Los investigadores identificaron los restos de 30 lagartijas que fueron víctimas del depredador y midieron la longitud de los cuernos ([Young et al., 2004](https://www.science.org/doi/10.1126/science.1094790)). Como grupo de comparación ellos midieron la misma característica en 154 lagartijas vivas. Los datos de longitud de cuernos para ambos grupos muestréales se encuentran en el archivo **Lagartijas.csv**.
+
+Con base en estos datos: 
+
+**a.** **[0.3 puntos]** Explore visualmente sus datos.
+
+```{r}
+
+library(ggplot2)
+lagartijas <- read.csv("Lagartijas.csv")
+lagartijas
+lagartijas1 = lagartijas$Survive
+lagartijas.1 = lagartijas1 == 1
+
+
+ggplot(subset(lagartijas, Survive == 1), aes(x = Squamosal_horn_length)) +
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "white") +
+  labs(title = "Histograma de la longitud de los cuernos de las lagartijas escamosal supervivientes",
+       x = "Longuitud del cuerno (mm)", y = "Frecuencia") +
+  theme_minimal()
+
+ggplot(subset(lagartijas, Survive == 0), aes(x = Squamosal_horn_length)) +
+  geom_histogram(binwidth = 1, fill = "lightcoral", color = "white") +
+  labs(title = "Histograma de la longitud de los cuernos de las lagartijas escamosal NO supervivientes",
+       x = "Longuitud del cuerno (mm)", y = "Frecuencia") +
+  theme_minimal()
+
+ggplot(lagartijas, aes(x = factor(Survive), y = Squamosal_horn_length, fill = factor(Survive))) +
+  geom_boxplot() +
+  labs(title = "Comparasion de la longuitud del cuerno entre lagartijas supervivientes y No supervivientes",
+       x = "Estatus de supervivencia", y = "Longuitud del cuerno (mm)") +
+  scale_fill_manual(values = c("lightgreen", "lightcoral")) +
+  theme_minimal()
+
+
+ggplot(lagartijas, aes(x = Squamosal_horn_length, y = factor(Survive), color = factor(Survive))) +
+  geom_point() +
+  labs(title = "Relacion entre la longuitud del cuerno(mm) y supervivencia",
+       x = "Longuitud del cuerno (mm)", y = "Estatus de supervivencia") +
+  scale_color_manual(values = c("blue", "red")) +
+  theme_minimal()
+
+```
+
+
+**b.** **[0.15 puntos]** Escoja un estadístico de prueba para validar la propuesta de los investigadores. Justifique su elección.
+
+```{r}
+
+library(infer)
+
+library(tidyverse)
+library(infer)
+
+#Escogimos primeramente la prueba de permutaciones, debido a principalmente de que, como se menciona en el libro "The analysis of Biological Data de Withlock y Schulter (2019) Cap 13.8, las permutaciones es una prueba para rechazar o no hipotesis, a diferencia de Bootstrap que esta enfocada en intervalos de confianza y al error estandar. Asimismo, estadistico de prueba que tomamos fue diferencia entre medias "diff in means" esto con el motivo para observar la asociacion entre las dos variables muestrales; al conocer si son independientes o si comparten alguna relacion. En este caso si el grupo de los supervivientes fuera mayor, la diferencia entre las medias seria positivo y por lo tanto apoyaria a la hipotesis del enunciado de que los cuernos ayudan a la supervivencia de los lagartos, o por el contrario, si la diferencia es negativa significaria que no hay suficiente evidencia para concluir o rechazar la hipotesis nula.
+
+
+lagartijas$Survive <- as.factor(lagartijas$Survive)
+
+lagartijas_spec <- lagartijas |>
+  specify(Squamosal_horn_length ~ Survive)
+
+observed_diff <- lagartijas_spec |>
+  calculate(stat = "diff in means", order = c("1", "0"))
+
+observed_diff
+
+
+#finalmente siguiendo nuestra hipotesis se usara una prueba superior de una cola
+
+```
+
+
+**c.** **[0.1 puntos]** Plantee la hipótesis nula y la alternativa teniendo en cuenta la pregunta de investigación mencionada.
+
+```{r}
+#Ho = La longuitud de los cuernos entre los lagartos Phrynosoma mcallii no influye ante la proteccion de la depredacion, por lo tanto la diferencia entre las medias de los lagartos se comportaria como una distribución nula.    diff_means = 0
+
+#Ha =  La longuitud de los cuernos entre los lagartos Phrynosoma mcallii influye en su supervivencia al ofrecer proteccion ante la depredación, por lo que su diferencia de las medias seria mayor a 0.   diff_means > 0
+
+
+```
+
+
+**d.** **[0.15 puntos]** Calcule el estadístico de prueba escogido en el conjunto de datos tomados.
+
+
+```{r}
+
+null_distribution <- lagartijas_spec |>
+  hypothesize(null = "independence") |>
+  generate(reps = 80000, type = "permute") |>
+  calculate(stat = "diff in means", order = c("1", "0"))
+
+
+null_distribution
+
+null_distribution |>
+  visualize() +
+  labs(title = "Distribución Nula",
+    x = "Diferencia de la media en la longuitud de los cuernos de una distribucion nula", 
+    y = "Frecuencia",
+      
+  ) +
+  theme_minimal()
+
+
+p_value <- null_distribution |>
+  get_p_value(obs_stat = observed_diff, direction = "right")
+
+p_value
+
+
+
+
+
+```
+
+
+**e.** **[0.9 puntos]** Determine si la longitud de los cuernos en esta especie sirve o no como protección ante la depredación. Además del resultado numérico, muestre gráficamente sus resultados y discútalos.
+
+```{r}
+
+
+
+null_distribution |>
+  visualize() +
+  
+  shade_p_value(
+    obs_stat = observed_diff,  
+    direction = "right"  
+  ) +
+  labs(title = "Distribucion Nula con el valor observado",
+    x = "Diferencia de la media en la longuitud de los cuernos de una distribucion nula", 
+    y = "Frecuencia",
+    caption = "La linea roja representa el valor observado."  
+  ) +
+  theme_minimal()
+
+
+p_value <- null_distribution |>
+  get_p_value(obs_stat = observed_diff, direction = "right")
+
+p_value
+
+#Al observar el valor-P de (3.75 *10^-5) y al compararlo con un nivel de significancia o alfa de 0,05 podemos concluir que hay suficiente evidencia para rechazar la hipotesis nula. Asimismo, al observar el valor observado en la distribución nula se puede examinar que se encuentra en la region de rechazo. Y por lo tanto, que la longuitud de los cuernos en la _Phrynosoma mcallii_ sirve como proteccion ante la depredación.
+
+```
+
+
+**f.** **[0.9 puntos]** Encuentre el intervalo de confianza del valor obtenido para el estadístico de prueba que escogió. Además del resultado numérico, muestre gráficamente sus resultados y discútalos.
+
+```{r}
+
+lagartijas_spec <- lagartijas |>
+  specify(Squamosal_horn_length ~ Survive)
+
+
+
+# Calcular el interevalo de confianza del 95%
+conf_int <- null_distribution |>
+  get_confidence_interval(level = 0.95, type = "percentile")
+
+conf_int
+
+# Visualizar en la distribucion nula el intervalo de confianza
+null_distribution |>
+  visualize() +
+  shade_confidence_interval(endpoints = conf_int) + 
+  labs(title = "Distribución Nula con un intervalo de confianza del 95%",
+        x = "Diferencia de la media en la longuitud de los cuernos en una distribucion nula", 
+    y = "Frecuencia",) 
+
+
+#Inicialmente podemos concluir con una confianza del 95% que en una distribucion nula la diferencia de medias entre los grupos de lagartijas que sobrevivieron y no sobrevivieron esta en el intervalo de [-1.0469;1.1116]. Igualmente al observar la grafica podemos concluir que el valor observado no se encuentra en este intervalo, por lo tanto si existe una relacion entre la supervivencia de las lagartijas y la longuitud de sus cuernos. A causa de que, el cuartil del 2,5% a la derecha del intervalo es la region de rechazo por consiguiente la hipotesis Nula tambien se rechaza en ester caso
+
+
+   
+```
+
+
+**2.** El conjunto de datos **pollination.txt** contiene los datos sobre un experimento de polinización por abejorros. Utilizando flores artificiales se expuso a una serie de colonias a 2 tratamientos experimentales, uno donde las flores estaban siendo cuidadas por hormigas, mientras que en el otro no. Las flores artificiales están provistas con un sistema de dosificación de tinta tal que se pudo cuantificar la cantidad de tinta extraída y dejada por los abejorros en ambos tratamientos. La pregunta científica detrás de este experimento es: sí la presencia de hormigas en una planta puede afectar las visitas (frecuencia y/o duración) por parte de los abejorros, en este caso el efecto se evalúa a través del movimiento de tinta entre las diferentes flores.
+
+Con base en estos datos: 
+
+**a.** **[0.3 puntos]** Explore visualmente sus datos
+
+```{r}
+
+library(ggplot2)
+library(tidyr)
+
+abejorros <- read.csv("pollination.txt", header = TRUE, sep="\t")
+
+abejorros$Dye_donated_.ng. <- as.numeric(gsub(",", ".", abejorros$Dye_donated_.ng.))
+abejorros$Dye_received_.ng. <- as.numeric(gsub(",", ".", abejorros$Dye_received_.ng.))
+
+
+datos_long <- pivot_longer(abejorros,
+                           cols = c(Dye_donated_.ng., Dye_received_.ng.),
+                           names_to = "Tipo_tinta",
+                           values_to = "Cantidad_tinta")
+# Gráfica 1: Todos los datos
+grafica1 <- ggplot(datos_long, aes(x = Trial, y = Cantidad_tinta, fill = Tipo_tinta)) +
+  geom_col(position = "dodge") +
+  labs(x = "Número de ensayo", y = "Cantidad de tinta", fill = "Tipo de tinta")
+
+# Gráfica 2: Solo datos con hormigas
+datos_hormigas <- datos_long |> filter(Ants == 1)
+grafica2 <- ggplot(datos_hormigas, aes(x = Trial, y = Cantidad_tinta, fill = Tipo_tinta)) +
+  geom_col(position = "dodge") +
+  labs(x = "Número de ensayo", y = "Cantidad de tinta", fill = "Tipo de tinta")
+
+# Gráfica 3: Solo datos sin hormigas
+datos_sin_hormigas <- datos_long %>% filter(Ants == 0)
+grafica3 <- ggplot(datos_sin_hormigas, aes(x = Trial, y = Cantidad_tinta, fill = Tipo_tinta)) +
+  geom_col(position = "dodge") +
+  labs(x = "Número de ensayo", y = "Cantidad de tinta", fill = "Tipo de tinta")
+grafica1
+grafica2
+grafica3
+
+x<- shapiro.test(abejorros$Dye_donated_.ng.)
+y<- shapiro.test(abejorros$Dye_received_.ng)
+
+x
+y
+
+```
+
+
+**b.** **[0.15 puntos]** Escoja un estadístico de prueba para validar la propuesta de los investigadores. Justifique su elección.
+```{r}
+
+# En este caso al ser los datos no pareados y tratarse de una distribución no normal se optó por un test de wilcox, al ser este util trabajando con conjuntos de datos de estas características. Sin embargo, para ser consistentes con el tema, se empleara bootstrap para hallar los intervalos de confianza y para determinar el tipo de distribucion que sigue, de esta manera se podra comparar ambos estadisticos de prubas. Igualmente se empleara una diferencia entre medianas, esto debido a que son datos que pueden no cumplen los supuestos requeridos para las pruebas paramétricas y porque La mediana es menos sensible a los valores atípicos que la media, finalmente siguiendo nuestra hipotesis se usar una prueba de dos colas
+
+```
+
+**c.** **[0.1 puntos]** Plantee la hipótesis nula y la alternativa teniendo en cuenta la pregunta de investigación mencionada.
+
+```{r}
+
+#H0 = Los abejorros visitan las flores indistintamente en presencia o ausencia de hormigas. la diff entre medianas = 0
+#HA = Los abejorros tienden a visitar las flores con ausencia de hormigas o en sudefecto las mas visitas a flores con hormigas suelen ser mas cortas.la diff entre medianas es distinta de 0
+
+```
+
+
+**d.** **[0.15 puntos]** Calcule el estadístico de prueba escogido en el conjunto de datos tomados.
+
+```{r}
+
+r<-wilcox.test(abejorros$Dye_donated_.ng.,abejorros$Dye_received_.ng.)
+r
+
+library(tidyverse)
+library(infer)
+
+# Lee los datos y prepara las columnas
+
+abejorros$Dye_donated_.ng. <- as.numeric(gsub(",", ".", abejorros$Dye_donated_.ng.))
+
+
+abejorros$Ants <- as.factor(abejorros$Ants)
+
+# quitar valores NA
+
+any(is.na(abejorros$Dye_donated_.ng.))
+any(is.na(abejorros$Ants))
+
+bootstrap_donated <- abejorros |>
+  specify(Dye_donated_.ng. ~ Ants) |>
+  generate(reps = 80000, type = "bootstrap") |>
+  calculate(stat = "diff in medians", order = c("1", "0"))
+
+
+bootstrap_donated |>
+  visualize() +
+  labs(title = "Distribución con bootstrap",
+    x = "Diferencia de la mediana entre los grupos de abejas con hormigas y sin hormigas", 
+    y = "Frecuencia",
+      
+  ) +
+  theme_minimal()
+
+observed_diff <- abejorros |>
+  specify(Dye_donated_.ng. ~ Ants) |>
+  calculate(stat = "diff in medians", order = c("1", "0"))
+
+
+observed_diff
+
+p_value <- bootstrap_donated |>
+  get_p_value(obs_stat = observed_diff, direction = "two-sided")
+
+p_value
+
+
+```
+
+
+**e.** **[0.9 puntos]** Determine si la longitud de los cuernos en esta especie sirve o no como protección ante la depredación. Además del resultado numérico, muestre gráficamente sus resultados y discútalos.
+
+```{r}
+
+
+
+bootstrap_donated|>
+  visualize() +
+  
+  shade_p_value(
+    obs_stat = observed_diff,  
+    direction = "two-sided") +  
+  labs(title = "Distribución con bootstrap y el valor observado",
+    x = "Diferencia de la mediana entre los grupos de abejas con hormigas y sin hormigas", 
+    y = "Frecuencia",
+    caption = "La linea roja representa el valor observado."  
+  ) +
+  theme_minimal()
+
+p_value <- bootstrap_donated |>
+  get_p_value(obs_stat = observed_diff, direction = "right")
+
+p_value
+
+#Al observar el valor-P de (0.8415) y al compararlo con un nivel de significancia o alfa de 0,05 podemos concluir que no hay suficiente evidencia para rechazar la hipotesis nula. Asimismo, al observar el valor observado en la distribución se puede examinar que no se encuentra en la region de rechazo. En vez se encuentra en un valor muy cercano a 1 Y por lo tanto, la presencia de las hormigas no es un factor que altere la cantidad de tinta extraída y dejada por los abejorros en ambos tratamientos o grupos.
+
+
+
+```
+
+**f.** **[0.9 puntos]** Encuentre el intervalo de confianza del valor obtenido para el estadístico de prueba que escogió. Además del resultado numérico, muestre gráficamente sus resultados y discútalos.
+
+```{r}
+
+diferencia_medianas <- median(abejorros$Dye_donated_.ng.) - median(abejorros$Dye_received_.ng.)
+
+library(boot)
+boot_result <- boot(abejorros, statistic = function(data, indices) {
+  dif_mediana <- median(abejorros$Dye_donated_.ng.[indices]) - median(abejorros$Dye_received_.ng.[indices])
+  return(dif_mediana)
+}, R = 1000)
+
+
+
+boot_ci <- boot.ci(boot_result, type = "bca")
+boot_ci
+
+boxplot(abejorros$Dye_donated_.ng., abejorros$Dye_received_.ng., names = c("Tinta donada", "Tinta recibida"))
+abline(h = diferencia_medianas, col = "red")
+segments(x0 = 1.2, x1 = 1.8, y0 = -224.69, y1 = -224.69, col = "blue")
+segments(x0 = 1.2, x1 = 1.8, y0 = 49.68, y1 = 49.68, col = "blue")
+
+
+
+# Calcular el interevalo de confianza del 95%
+conf_int <- bootstrap_donated |>
+  get_confidence_interval(level = 0.95, type = "percentile")
+
+conf_int
+
+# Visualizar en la distribucion nula el intervalo de confianza
+bootstrap_donated |>
+  visualize() +
+  shade_confidence_interval(endpoints = conf_int) + 
+  labs(title = "Distribución con bootstrap con un intervalo del 95%",
+    x = "Diferencia de la mediana entre los grupos de abejas con hormigas y sin hormigas", 
+    y = "Frecuencia",) 
+
+
+#Inicialmente podemos concluir con una confianza del 95% que en una distribucion de bootstrap la diferencia de medianas entre los grupos de abejorros que fueron expuestos con hormigas y abejorros que no fueron expuesto esta en el intervalo de [-773.674;157.492]. Igualmente al observar la grafica podemos concluir que el valor observado -116.993  se encuentra en este intervalo, por lo tanto no existe una relacion entre la cantidad de tinta extraída y dejada por los abejorros y la presencia de hormigas cerca de las flores en todas los colonias o grupos del experimento.
+
+
+
+```
+
