@@ -1,0 +1,378 @@
+---
+title: "Taller 03 - Estadística Descriptiva y Distribuciones"
+subtitle: "Modulo de Inferencia"
+author: 
+ - Integrante 1 Nicolas Montoya Leon - 202310678
+ - Integrante 2 John Anderson Acosta - 202212004
+ - Integrante 3 Raquel Bautista Escobar - 202310296
+date: today
+format: html
+lang: es
+fig-align: center
+df-print: paged
+---
+
+#### 1. Explorando datos de tortugas marinas (1.25 puntos)
+
+Cargue el archivo `tortugas.txt`: Estos datos corresponden a un estudio realizado para determinar cómo la temperatura del nido afecta la proporción de sexos obtenida en una nidada para tres especies de tortugas marinas: *Chelonia mydas*, *Caretta caretta* y *Dermochelys coriacea*.
+
+Para cada uno de los nidos se tomaron medidas de la temperatura promedio durante el día (8:00 am a 3:30 pm) y la cantidad de machos y hembras que nacieron. Luego, se calculó la proporción entre los sexos como Número de hembras / Número de machos.
+
+**a.** Calcule la media, la varianza y la desviación estándar de la temperatura de los nidos para cada una de las especies e indique el rango intercuartil. Debe presentar los datos en una tabla donde además indique el número de nidos analizados para cada especie.
+
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+tortugas<- read.table(
+  file= "tortugas.txt",
+  h=TRUE)
+
+tortugas_medidas<-tortugas|>
+  group_by(Especie)|>
+  summarise(media.temp=mean(Tem.prom_nidos),varianza.temp=var(Tem.prom_nidos),desviacion.temp=sd(Tem.prom_nidos),rango_intercuart=IQR(Tem.prom_nidos),num_nidos=length(Tem.prom_nidos))
+
+tortugas_medidas
+
+```
+
+**b.** ¿Cuál es la especie que presenta una mayor variación en el número de hembras producidas por nidada? Mencione cuál de las medidas de variación utilizó para responder esta pregunta y ¿por qué?
+
+**Respuesta:**
+
+**c.** Entre la temperatura y la proporción de sexos ¿Cuál presenta mayor variación? Mencione cuál de las medidas de variación utilizó para responder esta pregunta y ¿por qué?
+
+```{r}
+
+#b
+var_hembras<-tortugas|>
+  group_by(Especie)|>
+  summarise(Desviacion_s=var(numero.hembras)
+)
+max_var_h<-var_hembras|>
+  filter(Desviacion_s==max(Desviacion_s))
+ 
+
+max_var_h
+
+#En este caso utilizamos varianza, ya que esta permite medir qué tanto cambian los datos entre si, dandonos asi un resultado por cada especie de entre los cuales podemos obtener un resultado mayor.
+
+#c
+var_temp_nidos <- var(tortugas$Tem.prom_nidos)
+var_prop_sexos <- var(tortugas$proporcion.sexos)
+
+if (var_temp_nidos > var_prop_sexos) {
+  cat("La mayor variación corresponde a 'Temperatura de nidos', siendo esta de ", var_temp_nidos)
+} else {
+  cat("La mayor variación corresponde a 'Proporción de sexos', siendo esta de ", var_prop_sexos)
+}
+
+#En este caso utilizamos varianza, ya que esta permite medir qué tanto cambian los datos entre si, dandonos asi dos datos (varianzas) entre los cuales se compara directamente r.
+
+```
+
+**Respuesta:**
+
+**d.** Halle la varianza de la temperatura de los nidos de *Caretta caretta*.
+
+```{r}
+#d
+tortugas|>
+  filter(Especie=="Caretta_caretta")|>
+  summarise(varianza=var(Tem.prom_nidos))
+
+tortugas$varianza
+```
+
+#### 2. Explorando datos de mercurio (1.25 puntos)
+
+Su grupo está interesado en estudiar los niveles de mercurio en poblaciones humanas. Encuentra un artículo en el que evalúan la concentración de mercurio en sangre (ug/L), cabello (ug/g) y orina (ug/L) de dos poblaciones europeas (A y B). A continuación la tabla de resultados de dicho estudio:
+
+| Población | Sangre (ug/L) | Cabello (ug/L) | Orina (ug/L) |
+|-----------|---------------|----------------|--------------|
+| A         | 19            | 3              | 53           |
+| A         | 16            | 2              | 51           |
+| A         | 21            | 2              | 52           |
+| A         | 17            | 3              | 49           |
+| A         | 18            | 5              | 47           |
+| B         | 18            | 4              | 51           |
+| B         | 17            | 3              | 48           |
+| B         | 20            | 4              | 49           |
+| B         | 19            | 3              | 46           |
+| B         | 19            | 5              | 47           |
+
+**a.** Calcule la media, la mediana, la varianza y los intervalos de confianza del 90% de la media asociados para cada población. ¿Qué población está más afectada? Recuerde organizar bien los datos.
+
+```{r}
+poblacion <- c("A","A","A","A","A","B","B","B","B","B")
+Sangre<- c(19,16,21,17,18,18,17,20,19,19)
+Cabello <- c(3,2,2,3,5,4,3,4,3,5)
+Orina<- c(53,51,52,49,47,51,48,49,46,47)
+
+Mercurio_Europe <- data.frame(poblacion
+                              ,Sangre,Cabello,Orina)
+
+#Mercurio_Europe
+
+pob_a<-Mercurio_Europe |>
+  filter( poblacion == "A")
+pob_a<-(pob_a$Sangre+pob_a$Cabello+pob_a$Orina)
+
+
+pob_b<-Mercurio_Europe |>
+  filter( poblacion == "B")
+pob_b<-(pob_b$Sangre+pob_b$Cabello+pob_b$Orina)
+
+media_a<- mean(pob_a)
+mediana_a<- median(pob_a)
+var_a<- var(pob_a)
+
+intervalo_inf_a <- media_a - ((qt(0.9, length(pob_a) - 1) * sd(pob_a)) / sqrt(length(pob_a)))
+intervalo_sup_a <- media_a + ((qt(0.95, length(pob_a) - 1) * sd(pob_a)) / sqrt(length(pob_a)))                            
+
+media_b<- mean(pob_b)
+mediana_b<- median(pob_b)
+var_b<- var(pob_b)
+
+intervalo_inf_b <- media_b - ((qt(0.9, length(pob_b) - 1) * sd(pob_b)) / sqrt(length(pob_b)))
+intervalo_sup_b <- media_b + ((qt(0.95, length(pob_b) - 1) * sd(pob_b)) / sqrt(length(pob_b)))                            
+
+Poblacion <- c("A","B")
+Media<- c(media_a,media_b)
+Varianza <- c(var_a,var_b)
+Intervalo_inferior0.9<- c(intervalo_inf_a,intervalo_inf_b)
+Intervalo_superior0.9<- c(intervalo_sup_a,intervalo_sup_b)
+
+Tabla_respuesta <-data.frame(Poblacion,Media, Varianza, Intervalo_inferior0.9, Intervalo_superior0.9)
+
+Tabla_respuesta
+
+if (media_a > media_b){
+  cat("La poblacion A se encuentra más afectada")
+}else {
+  cat("La población B se encuentra más afectada")
+}
+```
+
+**Respuesta:**
+
+**3.** Ustedes deciden hacer un estudio parecido en Colombia. En este caso usando únicamente muestras de cabello debido a la facilidad de toma de muestra. Decidieron evaluar 3 poblaciones colombianas: una cuya economía se basa en la pesquería y minería de oro (Pe_Mi), otra principalmente pesquera (Pe) y finalmente una ganadera (Ga). Las concentraciones de mercurio (ug/g) encontradas se encuentran en el archivo `mercurio_colombia.txt`. A partir de estos datos grafique:
+
+**a.** Un histograma de todas las concentraciones indicando la media aritmética con una línea roja y la mediana con una línea verde. Además señale con líneas discontinuas los intervalos de confianza del 95% de la media ¿Hay diferencia entre estas?¿A qué se debe esta diferencia? (para hacer las líneas pueden usar el comando `geom_abline()` o `geom_vline()`).
+
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+
+
+mercurio <- read.table("mercurio_colombia.txt", header=TRUE)
+
+mercurio
+
+Media <- mean(mercurio$mercurio_cabello)
+mediana <- median(mercurio$mercurio_cabello)
+intervalos <- t.test(mercurio$mercurio_cabello)$conf.int
+
+mediana
+intervalos
+
+histograma <- ggplot(mercurio, aes( x=mercurio_cabello)
+) + geom_histogram(binwidth = 1, fill = "orange", color = "black") +
+  geom_vline(xintercept = Media, color = "red", linetype = "solid", size = 1) +
+  geom_vline(xintercept = mediana, color = "green", linetype = "solid", size = 1) +
+  geom_vline(xintercept = intervalos[1], linetype = "dashed", color = "lightblue") +
+  geom_vline(xintercept = intervalos[2], linetype = "dashed", color = "lightblue") +
+  labs(
+    x = "Concentración de Mercurio (ug/g)",
+    y = "Frecuencia",
+    title = "Histograma de Concentraciones de Mercurio en Muestras de Cabello en Colombia"
+  ) 
+  
+histograma
+```
+
+**Respuesta:** si hay diferencias entre las lineas, los intervalos de confianza representan en el que es probable que se encuentre la verdadera media de la población, mientras que la línea de la media representa el valor promedio de la muestra. Asimismo estas lineas de confianza se encuentran en la derecha o izquierda de la mediay varian en su ubicacion pero no en lo alejado que estan de la media
+
+**b.** Un diagrama de cajas o boxplot con un stripplot comparando las concentraciones de mercurio en cabello de las tres poblaciones. ¿Qué representa cada parte del boxplot? Intérprete y discuta sus resultados.
+
+```{r}
+boxplot <- ggplot(mercurio, aes( x=economia, y=mercurio_cabello)
+) + geom_jitter(fill = "black", color = "red",width = 0.2) +
+  
+  labs(
+    x = "economia",
+    y = "Concentración de Mercurio ",
+    title = "Comparación de Concentraciones de Mercurio en Cabello por economía"
+  ) 
+
+boxplot
+```
+
+**Respuesta:** este boxplot de puntos representan todos los datos, desde el valor minimo, ubicado en la parte inferior, hasta el valor maximo, ubicado en la parte superior. De este modo se puede saber en donde se concentra la mayoria de la informacion, donde se ubica la media de los datos y por ultimo estan divididos por la actividad econommica de la poblacion
+
+#### 3. Explorando datos en humanos y sus distribuciones (1.25 puntos)
+
+Cargue los datos `bones_dimension.csv`, que se encuentran en la carpeta del taller de esta semana. Revise el contenido del archivo.
+
+::: callout-important
+En el siguiente [link](https://www.openintro.org/book/statdata/?data=bdims) encontrara el significado de las variables del set de datos.
+:::
+
+**a.** Simule una distribución normal aleatoria con una media de 175 y una desviación estándar de 18. Grafíquela.
+
+```{r}
+library(readr)
+bones_dimensions <- read_csv("bones_dimensions.csv")
+
+
+histog <- rnorm(nrow(bones_dimensions), mean = 175, sd = 18)
+
+library(tidyverse)
+library(palmerpenguins)
+
+distr_normal <- ggplot() + 
+  geom_histogram(data = data.frame(histog), aes(x = histog), fill = "thistle", color = "black") +
+  labs(
+    x = "valor",
+    y = "frecuencia",
+    title = "Histograma de Distribución Normal"
+  ) +
+  theme_grey()
+
+distr_normal
+```
+
+**b.** Haga un histograma de la altura de hombres y otro de la altura de mujeres. Adicionalmente, calcule la media y la desviación estándar de cada distribución. ¿Qué puede decir de la altura de los hombres y de las mujeres a raíz de estos histogramas?
+
+```{r}
+filtro <- bones_dimensions[, c("hgt","sex")] 
+
+filtro_men <- filtro |> 
+  filter(sex == 1)
+
+filtro_women <- filtro |> 
+  filter(sex == 0)
+
+filtro_women
+filtro_men
+
+new_hist <- ggplot(filtro_men, aes(x=hgt))+
+  geom_histogram( fill = "pink", color = "darkcyan")+ labs(x="Altura", y="numero de repeticiones",
+                                                           title = "Histograma altura en Hombres")
+
+wom_hist <- ggplot(filtro_women, aes(x=hgt))+
+  geom_histogram( fill = "cyan", color = "deeppink") + labs(x="Altura", y="numero de repeticiones",
+                                                            title = "Histograma altura en Mujeres")
+
+new_hist
+wom_hist
+
+Media_men <- mean(filtro_men$hgt)
+desv_men <- sd(filtro_men$hgt)
+
+cat("La media en Hombres es: ",Media_men, "\n")
+cat("La desviacion estandar en Hombres es: ",desv_men, "\n")
+
+
+Media_women <- mean(filtro_women$hgt)
+desv_women <- sd(filtro_women$hgt)
+
+cat("La media en Mujeres es: ",Media_women, "\n")
+cat("La desviacion estandar en Mujeres es: ",desv_women, "\n")
+
+#De acuerdo a la información proporcionadda en los histogramas, podemos deducir que el rango donde se encuentra mayor densidad en la altura de las mujeeres es entre 1,60m y 1.70m. De las misma manera, en los hombres podemos observar que la media es aproximadamente 1,78. 
+```
+
+**c.** Realice un gráfico de densidad para la altura en hombres, mujeres y la distribución aleatoria realizada en el punto anterior. Observe y analice las gráficas de densidad obtenidas. ¿Considera que todas presentan una densidad característica de una distribución normal? Explique el resultado observado.
+
+```{r}
+men_dens <- ggplot(filtro_men, aes(x=hgt))+
+  geom_density( fill = "deeppink", color = "cyan")+ labs(x="Altura", y="numero de repeticiones",
+                                                           title = "Densidad de altura en Hombres")
+
+wom_dens <- ggplot(filtro_women, aes(x=hgt))+
+  geom_density( fill = "darkcyan", color = "pink") + labs(x="Altura", y="numero de repeticiones",
+                                                            title = "Densidad de altura en Mujeres")
+
+new_dens <- ggplot(data = data.frame(histog)) +
+  geom_density(aes(x = histog), fill = "darkviolet", color = "black") + labs(
+    x = "Altura",
+    y = "Número de repeticiones",
+    title = "Densidad de una distribución aleatoria"
+  )
+
+men_dens
+wom_dens
+new_dens
+
+#Teniendo en cuenta la distribucion de los datos recolectados, podemos analizar y deducir que en los tres histogramas se presentan una distribución normal. Esto se debe a que estas se caracterizan por tener una estructura gaussiana, es decir, en forma de campana. En otras palabras, los resultados se acumulan en los valores centrales analizados.
+```
+
+**d.** Utilizando la media y desviación estándar de la altura tanto de hombre y mujeres, obtenga los valores de los primeros 3 cuartiles teóricos asumiendo que las altura siguen una distribución normal. ¿Qué podría concluir a partir de estos resultados?
+
+```{r}
+q1_men <- qnorm(0.25, mean = Media_men, sd = desv_men)
+q2_men <- qnorm(0.5, mean = Media_men, sd = desv_men)
+q3_men <- qnorm(0.75, mean = Media_men, sd = desv_men)
+
+q1_women <- qnorm(0.25, mean = Media_women, sd = desv_women)
+q2_women <- qnorm(0.5, mean = Media_women, sd = desv_women)
+q3_women <- qnorm(0.75, mean = Media_women, sd = desv_women)
+
+cat("los 3 pimeros cuartiles para hombres son: ",q1_men,q2_men,q3_men, "\n")
+cat("los 3 pimeros cuartiles para mujeres son: ",q1_women,q2_women,q3_women)
+```
+se puede concluir que los cuartiles representan el 75% donde se encuentra la muestra de la altura de las personas, y cada cuartil representa el valor medio o valor esperado de cada cuartil, conociendolo se puede clasificar donde puede caer una persona segun su altura.
+#### 4. Distribuciones y probabilidades (1.25 puntos)
+
+Responda las siguiente preguntas relacionadas con la probabilidad en una distribución normal
+
+**a.** ¿Cuál es la probabilidad de que una mujer escogida de la muestra tenga un peso superior a 68kg?
+
+```{r}
+
+filtro <- bones_dimensions[, c("wgt","sex")] 
+
+filtro_women <- filtro |> 
+  filter(sex == 0)
+
+desv_pes <- sd(filtro_women$wgt)
+mean_pes <- mean(filtro_women$wgt)
+
+probabilidad_68 <- 1 - pnorm(68, mean_pes,desv_pes)
+
+probabilidad_68
+
+
+```
+
+**b.** ¿Cuál es la probabilidad de que un hombre pese entre 75 kg a 80 kg?
+
+```{r}
+filtro <- bones_dimensions[, c("wgt","sex")] 
+
+filtro_men <- filtro |> 
+  filter(sex == 1)
+
+desv_pes <- sd(filtro_men$wgt)
+mean_pes <- mean(filtro_men$wgt)
+
+probabilidad_75 <- pnorm(80, mean_pes,desv_pes) - pnorm(75, mean_pes,desv_pes)  
+
+probabilidad_75
+```
+
+**c.** ¿Cuál es la probabilidad de que tanto hombres como mujeres mayores de 22 años tengan un peso superior a 80 kg?
+
+```{r}
+filtro <- bones_dimensions[, c("wgt","age")] 
+
+filtro_age <- filtro |> 
+  filter( age > 22)
+
+desv_age <- sd(filtro_age$wgt)
+mean_age <- mean(filtro_age$wgt)
+
+probabilidad_80 <- 1 - pnorm(80, mean_age,desv_age)
+
+probabilidad_80
+```

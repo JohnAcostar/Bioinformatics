@@ -1,0 +1,203 @@
+---
+title: "Taller 02 - Introducción al Tidyverse"
+author: 
+ - Integrante 1
+ - Integrante 2
+ - Integrante 3
+date: today
+format: html
+lang: es
+fig-align: center
+df-print: paged
+---
+
+
+Dentro de la carpeta del laboratorio de esta semana se encuentran archivos de datos con los nombres: `storms` y `midwest`.
+
+
+**1.** `storms` es un subconjunto de datos del [NOAA Antlantic hurricane database](https://www.nhc.noaa.gov/data/#hurdat). Estos datos incluyen la posición y las características de 198 tormentas tropicales registrados cada 6 horas durante el tiempo de vida de la tormenta. Por claridad, la variable *ts_diameter* indica el diámetro del área donde se están experimentando vientos con magnitud de tormenta tropical (34 nudos o más) y la variable *hu_diameter* indica el diámetro del área donde se están experimentando vientos con magnitud de huracán (64 nudos o más).
+
+a. **[0.25 puntos]** ¿Cuál es la extensión del archivo `storms`?, averigúe sobre este tipo de archivo y describa brevemente lo que observa al intentar abrir dicho archivo en su computador 
+
+:::{.callout-tip}
+si no está familiarizado con el tipo de archivo, intente primero abrirlo con un editor de texto). 
+:::
+**Respuesta:**
+
+b. **[0.25 puntos]** Importe el conjunto de datos `storms`. Inspecciónelo brevemente. ¿Cuantas filas y columnas tiene?
+```{r}
+library(tidyverse)
+library(palmerpenguins) 
+
+
+```
+**Respuesta:**
+
+c. **[0.25 puntos]** ¿Desde qué año y hasta qué año hay registros de tormentas en `storms`?
+
+d. **[0.25 puntos]** Vemos que en las columnas *ts_diameter* y *hu_diameter* hay una gran cantidad de valores `NA`. ¿Esto quiere decir que esas tormentas no tenían diámetro? ¿Cual es el significado de estos valores `NA` en este conjunto de datos.
+
+**Respuesta:**
+
+e. **[0.25 puntos]** Queremos explorar el diámetro de las tormentas, así que solamente podemos enfocarnos en las observaciones que cuentan con mediciones para estás variables. Elimine todas las observaciones que poseen valores `NA` para estas medidas. ¿Con cuántas observaciones queda?
+```{r}
+# storms_noNA <- storms |> 
+
+```
+
+f. **[0.25 puntos]** De las tormentas registradas en `storms_noNA`, cree un subconjunto de datos con la información de únicamente 7 tormentas de su elección.
+```{r}
+# storms_interest <- stormsnoNA |> 
+
+```
+
+g. **[0.25 puntos]** En una sola gráfica, muestre la distribución de las medidas del diámetro del área donde se experimental vientos con magnitud de tormenta tropical. Además, discrimine estas observaciones según el estatus de la tormenta. Solamente represente esta información para las tormentas que escogió en el punto anterior. Arregle el nombre de las etiquetas para que sea más comprensible. Agregue una leyenda que describa la representación que acaba de crear. ¿Cuál es la tormenta que mayor variación presentó en su diámetro estando en estadio de "tormenta tropical"?
+```{r}
+# storms_interest |> 
+
+```
+**Respuesta:**
+
+h. **[0.25 puntos]** Utilizando el conjunto de datos `storms_interest`, haga un *scatter plot* graficando *pressure* contra *wind*. Haga que el tamaño de los puntos cambié de acuerdo a la variable *category*. Discrimine el color de los punto de acuerdo al nombre de la tormenta (*name*). Describa los patrones que se observan en la gráfica. Arregle el nombre de las etiquetas para que sea más comprensible. Agregue una leyenda que describa la representación que acaba de crear.
+```{r}
+# storms_interest |> 
+
+```
+
+i. **[0.25 puntos]** Calcule el promedio, desviación estándar y coeficiente de variación del diámetro del área donde se están experimentando vientos con magnitud de tormenta tropical para cada tormenta que escogió.
+```{r}
+# storms_interest_summary <- storms_interest |> 
+
+
+```
+
+j. **[0.25 puntos]** Exporte la tabla `storms_interest_summary` a un archivo delimitado por "@". Utilice la extensión *.data*.
+```{r}
+
+```
+
+***
+
+**2.** `midwest` es un conjunto de datos que contiene información demográfica de los condados de la región "midwest" obtenida del censo del año 2000 de EEUU (Fuente: https://cran.r-project.org/web/packages/acs/index.html). 
+
+
+a. **[0.3125 puntos]** ¿Cuál es la extensión del archivo `midwest`?, averigüe sobre este tipo de archivo y describa brevemente lo que observa al intentar abrir dicho archivo en su computador (tip: si no está familiarizado con el tipo de archivo, intente primero abrirlo con un editor de texto). 
+
+**Respuesta:**
+
+La extensión es un XLSX, que significa un formato de Hoja de cálculo de Microsoft, conocido como Excel. Asimismo, al abrirlo en el computador abre Excel, y en un editor de texto abre una lista de caracteres sin alguna aparente sintaxis u orden, por lo que es posible que no es capaz de procesar.
+
+
+
+b. **[0.3125 puntos]** Importe el conjunto de datos `midwset`. Inspecciónelo brevemente. ¿Cuantas filas y columnas tiene?
+```{r}
+# midwset <- 
+library(readxl)
+
+midwest <- read_xlsx("midwest.xlsx")
+
+midwest
+
+x <- c("Rows:",nrow(midwest), "Columns: ",ncol(midwest))
+
+x
+
+
+```
+
+**Respuesta:**
+
+c. **[0.3125 puntos]** Realice una visualización donde grafique el número de condados que hay por cada categoría. Además, discrimine su visualización de tal forma que se pueda distinguir por estados en cada categoría. También, separe su visualización en dos gráficas, una con los condados considerados en un área metropolitana y otra con los condados que no son considerados en un área metropolitana (esta información se encuentra en la columna *inmetro*). Arregle el nombre de las etiquetas para que sea más comprensible. Agregue una leyenda que describa la representación que acaba de crear. ¿Cuál es el estado con mayor número de condados que no hacen parte de un área metropolitana que hacen parte de la categoría *AAR*?
+
+```{r}
+  library(tidyverse)
+  
+  library(ggplot2)
+  library(palmerpenguins)
+  y <-midwest |>
+        filter(midwest$inmetro == 1)
+  
+  
+  
+  grafica1 <-ggplot(y, aes(x = category, fill = state)) + geom_bar(position = "dodge2",colour = "black",) +
+    labs(
+     x = "Categoría",
+     y = "#Condados",
+     title = "Condados en Áreas Metropolitanas por Categoría del año 2000 en EEUU ",
+     fill = "Estado en EEUU"
+       ) +  scale_fill_manual(values = c("orchid", "lightcoral", "lightsteelblue1", "olivedrab1", "turquoise")) +
+      theme_bw() 
+      
+  
+  grafica1
+  
+  
+  z <-midwest |>
+        filter(midwest$inmetro == 0)
+  
+  grafica2 <-ggplot(z, aes(x = category, fill = state)) + geom_bar(position = "dodge2",colour = "black",) +
+    labs(
+     x = "Categoría",
+     y = "#Condados",
+     title = "Condados en Áreas NO Metropolitanas por Categoría del año 2000 en EEUU ",
+     fill = "Estado en EEUU"
+       ) +  scale_fill_manual(values = c("orchid", "lightcoral", "lightsteelblue1", "olivedrab1", "turquoise")) +
+      theme_bw() 
+      
+  
+  grafica2
+  
+  result <- midwest |>
+  filter(inmetro == 0, category == "AAR") |>
+  group_by(state) |>
+  summarize(counties = n()) |>
+  arrange(desc(counties)) |>
+  slice(1)
+  
+  result
+```
+**Respuesta:** El estado que tiene una Área que no hacen parte de un área metropolitana en la categoria AAR es Illinois (IL) con 51
+
+d. **[0.3125 puntos]** Seleccione únicamente las variables *county*, *state*, *area*, *poptotal*, *popwhite*, *popblack*, *popamerindian*, *popasian*, *popother*, *inmetro* y *category*.
+
+```{r}
+s <- midwest[, c("county", "state", "area", "poptotal", "popwhite", "popblack", "popamerindian", "popasian", "popother", "inmetro", "category")]
+s
+```
+
+
+e. **[0.3125 puntos]** Colapse las columnas con información de población por grupo étnico en una columna que indique la el grupo étnico y otra que indique su respectivo valor de población.
+
+```{r}
+collapsado <- s |>
+pivot_longer(cols = starts_with("pop"), names_to = "ethnic_group", values_to = "population") |>
+mutate(poptotal = rep(s$poptotal, each = ncol(s) - 5))
+
+collapsado
+```
+
+
+f. **[0.3125 puntos]** Calcule la proporción poblacional de cada grupo étnico en cada condado. (proporción = subconjunto/total).
+```{r}
+midwest_etn <- collapsado |> group_by(county, ethnic_group) |>summarise(proporcion = sum(population) / sum(poptotal), .groups = "drop")
+
+midwest_etn
+
+```
+
+g. **[0.3125 puntos]** Exporte la tabla `midwest_etn` a un archivo de Excel (pista: utilice el paquete [writexl](https://docs.ropensci.org/writexl/), no se le olvide descargarlo antes de intentar cargarlo).
+```{r}
+library(writexl)
+
+write_xlsx(midwest_etn, 'midwest_etn.xlsx')
+
+
+```
+
+h. **[0.3125 puntos]** Calcule la población total por estado. Organice sus resultados de menor a mayor. ¿Cuál es el estado con mayor población?
+```{r}
+midwest_poptot <- midwest |> 
+
+
+```
+**Respuesta:**
